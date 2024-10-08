@@ -1,0 +1,42 @@
+pm.sendRequest({
+    url: 'https://login.microsoftonline.com/<tenant_id>/oauth2/v2.0/token',
+    method: 'POST',
+    header: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: {
+        mode: 'urlencoded',
+        urlencoded: [
+            { key: "client_id", value: pm.variables.get("client_id") },
+            { key: "client_secret", value: pm.variables.get("client_secret") },
+            { key: "grant_type", value: "refresh_token" },
+            { key: "refresh_token", value: pm.variables.get("refresh_token") },
+            { key: "scope", value: "https://<domain>.sharepoint.com/.default offline_access" }
+        ]
+    }
+}, function (err, res) {
+    if (err) {
+        console.log("Token Refresh Error: " + err);
+    } else {
+        console.log("Response received...");
+        console.log("Full response body: ", res.text());  // Log the full response body as text
+
+        var jsonData = res.json();
+
+        // Set the access token
+        if (jsonData.access_token) {
+            pm.environment.set("access_token", jsonData.access_token);
+            console.log("New access_token: " + jsonData.access_token);
+        } else {
+            console.log("access_token not found in response");
+        }
+
+        // Set the refresh token if present in the response
+        if (jsonData.refresh_token) {
+            pm.environment.set("refresh_token", jsonData.refresh_token);
+            console.log("New refresh_token: " + jsonData.refresh_token);
+        } else {
+            console.log("refresh_token not found in response");
+        }
+    }
+});
